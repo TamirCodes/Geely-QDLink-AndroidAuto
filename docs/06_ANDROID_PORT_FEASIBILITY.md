@@ -9,6 +9,8 @@ A normal, stock, non-root Android APK can implement the **post-AOA QDLink applic
 
 The result is conditional rather than final because the exact `HU716P.00-BEH` has not been captured exposing a `UsbAccessory` and accepting clean-room QDLink bytes. The installed official app's architecture makes a mandatory application-controlled Samsung identity very unlikely, but only the target attach test closes that condition. JNI does not change the USB security boundary.
 
+Phase 0.5 strengthens, but does not close, this result. A pure-Kotlin core, Android `UsbAccessory`/PFD transport, V1/V2 simulator, and Android 16 lab APK now compile and the JVM protocol suite passes. The connected stock phone advertises both `android.hardware.usb.accessory` and `android.software.activities_on_secondary_displays` (`OBSERVED_IN_LAB`). None of this substitutes for observing the exact GE13 accessory.
+
 ## The decisive distinction
 
 ### QDPlay layer A: Linux impersonation of an Android phone
@@ -85,7 +87,7 @@ The official APK's active filter is exactly `Neusoft / QDriveLink / 1.0` (`VERIF
 | Detect AOA `START` ioctl | Framework handles it | No | Replaced by attachment intent/enumeration |
 | Set `18d1:2d00` | Framework/kernel handles it | No | Standard AOA behavior |
 | Open `/dev/usb_accessory` | Not directly | Yes, via framework equivalent | `openAccessory()` |
-| Read/write AOA bytes | Yes | Yes | File streams over PFD |
+| Read/write AOA bytes | Yes | Yes | PFD streams; each read buffer must accommodate a complete USB transfer (16 KiB recommended) |
 | Control endpoint sizes | No | Usually no | Stream parser must tolerate fragmentation |
 | Protocol V1/V2 | Yes | Yes | Kotlin/Java or JNI |
 | H.264 encoding | Yes | Yes | MediaCodec surface encoder |
@@ -204,6 +206,12 @@ MediaCodec can create an AVC encoder configured with `COLOR_FormatSurface`; `cre
 
 Hardware encoding is widely available but exact GE13 dimensions/profile support must be queried from the phone and tested.
 
+### Phase 0.5 transfer rule
+
+`UsbAccessory` does not provide protocol-message reads. Android warns that if an accessory USB transfer is larger than the application's read buffer, the unread remainder is discarded. The implementation therefore uses one 16,384-byte `FileInputStream.read()` buffer per delivery and feeds all returned bytes into a bounded V1/V2 accumulator. Fragmented and coalesced protocol frames were tested at every V2 split point. Output is serialized and written fully through a channel. This removes QDPlay's unsafe assumption that 512 bytes may always be read first without loss.
+
+The remaining target question is host behavior: whether GE13 groups transfers in a way the public PFD can sustain at video throughput. That can only be measured on the vehicle.
+
 ## Input feasibility
 
 An APK can parse QDLink touch and drive its own UI directly. For other foreground apps, an enabled AccessibilityService can dispatch taps, swipes, long presses, drags, and multi-stroke gestures. Reconstruct gestures from DOWN/MOVE/UP into a complete path; do not dispatch every MOVE as a separate swipe.
@@ -220,6 +228,8 @@ Known limitations:
 Custom UI is compatible with zero-tap projection because the app owns and encodes its Surface. This includes a driving launcher, app controls, media metadata, and navigation information obtained through legitimate APIs.
 
 Waze/Google Maps pixels are not available merely because the APK launches or controls those apps. Whole-display or selected-app capture requires MediaProjection, whose recurring consent prevents guaranteed zero-tap daily startup. Protected content may also be blank. Third-party mirroring is therefore optional and separate from the core plug-and-play architecture.
+
+Phase 0.5 also evaluated a VirtualDisplay backed directly by the MediaCodec encoder Surface. The tested Android 16 phone denied Activity placement on both public and private app-created displays, even for our package, but an app-owned `Presentation` on a private `OWN_CONTENT_ONLY` display rendered and encoded successfully without MediaProjection. Android denied Waze on the public display. Therefore the verified zero-tap architecture is Presentation/direct app-owned rendering, not third-party Activity hosting. Secure/protected surfaces remain outside this path.
 
 ## Bluetooth/audio feasibility
 

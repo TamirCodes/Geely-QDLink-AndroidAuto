@@ -28,7 +28,7 @@ Use Kotlin/Java only for the first proof, with interfaces that allow a later nat
 │ ConnectedDeviceService ─┼─ owns session lifetime         │
 │                         ▼                               │
 │ QdlinkTransport                                         │
-│   ├─ ParcelFileDescriptor / exact-length streams         │
+│   ├─ ParcelFileDescriptor / 16 KiB transfer reads        │
 │   ├─ write queue and 512-byte padding                    │
 │   └─ detach/error notifications                          │
 │                         │                               │
@@ -78,8 +78,8 @@ Minimum interface:
 
 ```text
 open(accessory)
-readExactly(byteCount)
-readFrameHeader()
+readTransfer(bufferSize >= 16384)
+feedAccumulator(bytes)
 writeFully(buffers)
 close(cause)
 events: Attached, Opened, EndOfStream, Detached, IoError
@@ -89,7 +89,8 @@ Requirements:
 
 - One serialized writer to prevent heartbeat/video/control interleaving.
 - Separate reader coroutine/thread.
-- Exact-length accumulation across short reads.
+- Never use an undersized 512-byte `InputStream.read()`; Android may discard the rest of that USB transfer.
+- Bounded V1/V2 accumulation across fragmented or coalesced transfers.
 - Full write loops across short writes.
 - Bounded frame sizes and deadlines.
 - Monotonic timestamps.
@@ -150,7 +151,8 @@ Pipeline:
 
 ```text
 TestPatternRenderer
-  → MediaCodec input Surface
+  → app-owned Presentation/direct renderer on OWN_CONTENT_ONLY VirtualDisplay
+  → MediaCodec input Surface (no MediaProjection)
   → AVC output access units
   → AnnexBAdapter + SPS/PPS cache
   → V1/V2 packetizer
@@ -170,6 +172,8 @@ Initial conservative encoder policy, subject to gate capture:
 - use negotiated bitrate; the official fallback value is diagnostic evidence, not a GE13 requirement.
 
 No profile/bitrate value is locked as an exact GE13 requirement because the official configuration has not been observed with `HU716P.00-BEH`.
+
+The lab path intentionally starts from the encoder Surface and creates the VirtualDisplay around it. On the tested Android 16 phone, Activity placement was denied even for our package, so the verified path uses an app-owned `Presentation` on a private `OWN_CONTENT_ONLY` display. Third-party Activity placement is a separate optional experiment, was denied for Waze, and is not part of MVP acceptance.
 
 ### `VehicleInputReceiver`
 

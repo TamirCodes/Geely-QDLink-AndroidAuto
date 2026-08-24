@@ -47,10 +47,13 @@ Android enters accessory mode               <---- AOA START
 System matches accessory filter
 System launches chosen/default Activity
 APK obtains permission and opens UsbAccessory
-APK sends 512-byte V1 APP_STATUS            ---->
-APK receives V1 VERSION or V2 CAR_INFO      <----
+APK first reads/accumulates HU traffic       <---- VERSION or CAR_INFO
+APK detects the first complete V1/V2 frame
+APK sends protocol-specific reply           ---->
 QDLink application state machine continues
 ```
+
+The listen-first strategy is safer for `HU716P.00-BEH` than reproducing QDPlay's blind V1 `APP_STATUS` probe. Static analysis of official QDLink shows an initial 512-byte read and dispatch by the HU marker. No packet is sent until a valid first HU frame is decoded (`VERIFIED_FROM_OFFICIAL_APK_STATIC`; exact target order remains `UNKNOWN`).
 
 The official QDLink 1.9.7 manifest matches `Neusoft / QDriveLink / 1.0` (`VERIFIED_FROM_OFFICIAL_APK_STATIC`). The exact six values actually emitted by `HU716P.00-BEH`, including description/URI/serial and null/empty behavior, remain `UNKNOWN` until target capture.
 
@@ -67,7 +70,7 @@ QDPlay also exposes two **local-only** Unix sockets:
 
 These sockets are process separation inside the SBC and are not sent to the vehicle.
 
-QDPlay pads many protocol messages to 512-byte boundaries. It assumes complete reads/writes more aggressively than a robust Android port may. Android's `ParcelFileDescriptor` streams must implement exact-length accumulation and complete write loops; packetization cannot assume each Java read equals one QDLink frame.
+QDPlay pads many protocol messages to 512-byte boundaries. It assumes complete reads/writes more aggressively than a robust Android port may. Android's accessory `InputStream` has a more specific constraint: the buffer must be large enough for the complete USB transfer or the unread remainder of that transfer is discarded. Android documents AOA packet buffers up to 16,384 bytes and recommends a 16,384-byte buffer. Therefore an APK must issue reads with a buffer of at least 16 KiB, then pass the returned bytes to a bounded QDLink accumulator. It must **not** call `read(512)` merely because QDLink uses 512-byte padding. One Java read is neither guaranteed to be one complete QDLink frame nor permitted to truncate a larger USB transfer (`VERIFIED_FROM_OFFICIAL_DOC`, implemented and unit-tested in Phase 0.5).
 
 ## Protocol detection
 

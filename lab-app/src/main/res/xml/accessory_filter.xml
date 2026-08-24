@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- VERIFIED_FROM_OFFICIAL_APK_STATIC; target HU strings still require capture. -->
+    <usb-accessory
+        manufacturer="Neusoft"
+        model="QDriveLink"
+        version="1.0" />
+</resources>
+

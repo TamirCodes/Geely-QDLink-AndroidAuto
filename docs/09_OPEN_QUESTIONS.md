@@ -17,6 +17,8 @@ Priority definitions:
 | Is any mandatory app-visible handshake performed before Android exposes the accessory? | Official app contains none and begins at public PFD; exact target still unobserved | Test 5: public PFD first-byte exchange |
 | Can `openAccessory()` streams satisfy transfer boundaries and throughput? | `UNKNOWN` on target | Exact-length probe and sustained generated-video tests |
 | Does the target require a private USB function, descriptor, or endpoint? | No evidence, but not disproved | Reproducible failure of public PFD with official app success and controlled diagnostics |
+| What sizes does GE13 use for individual inbound USB transfers? | `UNKNOWN`; Android requires a buffer large enough for the complete transfer | Log every 16 KiB PFD read result without assuming 512-byte delivery |
+| Which side sends the first QDLink frame? | Official-app static flow indicates HU first; QDPlay sends a V1 probe first | Listen-first target Test 5, then controlled official-app comparison |
 
 Resolution rule: any proven requirement for APK-controlled gadget VID/PID/configfs/FunctionFS is a Phase-1 `NO — architectural blocker`. JNI, root, custom kernel, ADB, or HU changes are not acceptable fallbacks.
 
@@ -109,6 +111,26 @@ Open questions:
 - Which product features must remain internal to preserve zero-tap behavior?
 
 No technical plan should promise zero-tap Waze mirroring on current stock Android.
+
+### VirtualDisplay findings and remaining questions from Phase 0.5
+
+Resolved on the tested stock Android 16 phone (`OBSERVED_IN_LAB`):
+
+- Android denied placement of our own Activity on both public and private app-created displays. Activity placement is therefore not a portable custom-UI architecture.
+- An app-owned `Presentation` on a private `OWN_CONTENT_ONLY` display rendered to the hardware AVC encoder without MediaProjection.
+- MediaCodec continued producing frames during a short display-0 sleep/wake cycle; this does not establish long secure-lock behavior.
+- Android denied Waze placement on the app-owned public display before launch. Waze produced no pixels and no navigation was started.
+- Shell input explicitly targeted at the logical display did not reach the `Presentation` touch listener on this phone.
+
+Still open:
+
+- Does the `Presentation`/encoder/connected-device-service path survive a long secure lock and OEM battery-management conditions?
+- Can a user-enabled AccessibilityService use `GestureDescription.Builder.setDisplayId()` to inject gestures onto this logical display on the chosen minimum Android versions?
+- Does QDLink touch-to-internal-UI handling need Android input injection at all, or should the custom renderer consume it directly?
+- Does display removal and recreation remain race-free during repeated USB loss and process death?
+- Are other supported stock phones materially different in secondary-display policy or hardware encoder behavior?
+
+Failure of any third-party item does not block the custom-rendered MVP.
 
 ## P3 — performance and product hardening
 

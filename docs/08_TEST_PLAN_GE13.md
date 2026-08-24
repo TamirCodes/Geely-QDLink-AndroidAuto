@@ -2,17 +2,30 @@
 
 All tests must be performed while parked. They are limited to the infotainment USB/QDLink interface. Do not enable engineering menus, ADB on the HU, root, CAN access, firmware update, or unknown binaries.
 
+## Phase 0.5 preflight completed before vehicle access
+
+- Pure Kotlin V1/V2/A6A6 codecs, CRC, bounded accumulator, state machine, and simulator are compiled and unit-tested.
+- The Android transport uses a 16,384-byte accessory read buffer; it never issues protocol-sized 512-byte reads at the PFD boundary.
+- The connected stock phone reports USB accessory and secondary-display feature support.
+- The Phase 0.5 APK installed and ran on stock Android 16 / API 36 after normal user approval; no root or privileged USB API was used.
+- Both V1 and V2 simulator sessions completed handshake, hardware-encoded video, touch reception, IDR handling, heartbeat, and watchdog teardown on the phone.
+- A private app-owned VirtualDisplay plus `Presentation` produced real 1280x720 Annex-B AVC without MediaProjection. Short display-0 sleep did not stop encoding.
+- Ordinary Activity placement was denied even for the lab package, and Waze placement was denied before launch. Vehicle-test acceptance therefore uses app-owned `Presentation`/direct rendering, not Activity hosting or third-party pixels.
+- The first real-HU strategy is listen-first: no blind `APP_STATUS` or other QDLink bytes are transmitted until a complete, valid HU `VERSION` or `CAR_INFO` frame is received.
+
+These are lab facts, not `OBSERVED_ON_TARGET` facts.
+
 ## Required test equipment
 
 - Exact target vehicle/HU identified in `05_GE13_TARGET_PROFILE.md`.
 - Stock, non-root Android test phone with screen lock known to the tester.
 - High-quality USB data cable.
 - Official QDLink installed for baseline/conflict tests.
-- Later Phase-1 diagnostic APK signed consistently across runs.
+- Phase 0.5 diagnostic APK signed consistently across runs.
 - Stopwatch or synchronized monotonic timestamps in application logs.
 - Optional second Android phone to distinguish phone-specific behavior.
 
-No test in this plan requires implementation during Phase 0. The procedures define the evidence Phase 1 must collect.
+The lab probe already exists, but no polished product implementation has begun. The procedures below define the target evidence the first vehicle session must collect.
 
 ## Logging baseline
 
@@ -73,12 +86,12 @@ Do not log contacts, messages, destinations, navigation history, screen images, 
 
 ## Test 5 — First QDLink byte exchange
 
-- **Connect:** Open the publicly supplied PFD and send exactly the QDPlay-compatible 512-byte `APP_STATUS` probe.
-- **Observe:** First inbound response and HU progress-bar change.
-- **Logs:** Exact byte count, marker (`!BIN`, `5A5A`, or other), validated declared length, latency, timeouts. Retain a privacy-reviewed binary capture for engineering only.
-- **Pass / formal USB `GO`:** A valid QDLink response arrives through `UsbAccessory` with no gadget manipulation.
+- **Connect:** Open the publicly supplied PFD. First issue a 16 KiB read and do not transmit protocol bytes.
+- **Observe:** Whether the HU sends the first `VERSION`/`CAR_INFO`, plus any HU progress-bar change.
+- **Logs:** Every USB-transfer byte count, marker (`!BIN`, `5A5A`, or other), validated declared length, latency, and timeout. Retain a privacy-reviewed binary capture for engineering only.
+- **Pass / formal USB `GO`:** A valid HU-originated QDLink frame arrives through `UsbAccessory`; the APK replies with the matching known response and receives/causes the next expected protocol event, with no gadget manipulation.
 - **Fail / `NO-GO` candidate:** The official app works but the PFD cannot produce a response despite verified bytes and three sessions.
-- **Next diagnostic:** Compare first probe timing/content, partial writes, 512-byte padding, and whether official app must be absent. If evidence shows required pre-AOA VID/PID/gadget control, stop Phase 1.
+- **Next diagnostic:** Compare with a privacy-reviewed official-app trace to determine which side actually speaks first. Only if the HU is proven silent should a separately approved, one-time known `APP_STATUS` probe be tried. Do not fuzz commands. If evidence shows required pre-AOA VID/PID/gadget control, stop Phase 1.
 
 ## Test 6 — Protocol generation and handshake transcript
 

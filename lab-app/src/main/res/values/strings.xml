@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QDLink GE13 Lab</string>
+    <string name="accessibility_description">Lab-only display-aware gesture dispatch for GE13 research.</string>
+</resources>
+
