@@ -19,7 +19,7 @@ This is an engineering audit, not legal advice. Recheck licenses and obtain lega
 | Source | Rights/status | Permitted Phase-0 use | Prohibited/default handling |
 |---|---|---|---|
 | Official QDLink Google Play listing | Copyrighted listing; factual product declarations | Cite and summarize interoperability behavior | Do not copy proprietary artwork or imply affiliation |
-| Official QDLink APK | Proprietary; not obtained | If lawfully pulled from user's test device, static analysis for interoperability facts with version/hash record | Do not redistribute APK, decompiled code, assets, keys, or large verbatim excerpts |
+| Official QDLink APK 1.9.7 (107) | Proprietary; lawfully pulled from the user's Google Play installation for Phase 0.25 | Static/dynamic analysis for interoperability facts with provenance and hashes recorded in `15_OFFICIAL_APK_ANALYSIS.md` | Do not commit or redistribute APKs, decompiled code, native libraries, assets, credentials, or large verbatim excerpts |
 | Geely GE13 manual | Copyrighted manufacturer documentation | Cite relevant facts and small necessary descriptions | Do not bundle/reproduce the manual or screenshots without permission |
 | Target USB/protocol captures | User-generated interoperability evidence; may contain identifiers/data | Store securely, sanitize, derive byte-level specifications | Do not publish personal data, phone identifiers, contacts/messages, or unrelated traffic |
 

@@ -60,6 +60,13 @@ The manual PDF was created in 2021 and is GE13-family documentation. It cannot e
 - Known project images use 1920x590 and 1760x720 configurations.
 - HU dimensions can be reported by the protocol.
 
+### `VERIFIED_FROM_OFFICIAL_APK_STATIC`, not the target
+
+- Official QDLink 1.9.7 contains a `GE13-J2` model-routing literal.
+- It does not contain the supplied FES5PL, HU716P, complete software string, or Geometry C name as plain text.
+- V2 `CAR_INFO` can carry `CarType`, `ProjectID`, `CarUUID`, `CarFeature`, factories, and dimensions, so target routing may be delivered at runtime.
+- Its active AOA attachment filter is `Neusoft / QDriveLink / 1.0`; the exact six values emitted by this HU still require capture.
+
 ## Display-space model
 
 These four dimensions must remain separate until measured:
@@ -78,7 +85,7 @@ Never infer physical resolution solely from `CarWidth`/`CarHeight`. The field ma
 | Question | Status | Why it matters |
 |---|---|---|
 | Does stock Android expose a `UsbAccessory`? | `UNKNOWN`, strongly expected | Mandatory feasibility gate |
-| Manufacturer/model/version strings | `UNKNOWN` | Needed for precise auto-launch filter/default mapping |
+| Manufacturer/model/version strings | Official APK expects `Neusoft / QDriveLink / 1.0`; target emission `UNKNOWN` | Needed for precise auto-launch filter/default mapping |
 | Description/URI/serial | `UNKNOWN` | Diagnostics and possible package routing |
 | AOA protocol version | `UNKNOWN` | Transport expectations |
 | Pre-AOA phone identity dependency | `UNKNOWN` | A mandatory Samsung VID/PID would block a normal APK |
@@ -101,7 +108,7 @@ Never infer physical resolution solely from `CarWidth`/`CarHeight`. The field ma
 - H.264 profile, level, entropy mode, reference frames, bitrate mode, and maximum bitrate.
 - 24/30/60 fps support.
 - Access-unit boundaries and maximum size.
-- SPS/PPS location and resend cadence.
+- Whether target accepts the official separate `csd-0 + csd-1` packet strategy and resend cadence.
 - AUD/SEI tolerance.
 - IDR timing and startup deadline.
 - Whether blank/padded bytes after frames are required exactly as QDPlay sends them.

@@ -132,25 +132,27 @@ Exact responsibility for initiating the link and the effect of the QDLink acknow
 
 | Concept | Official source | QDPlay source | Status |
 |---|---|---|---|
-| USB host/accessory mode | Manual shows Android USB accessory prompt | HU is host; QDPlay is device/accessory-mode endpoint | Consistent |
+| USB host/accessory mode | APK uses public `UsbAccessory`/PFD streams; manual shows Android prompt | HU is host; QDPlay is device/accessory-mode endpoint | Independently consistent |
 | Default handler | Manual screenshot exposes “Use by default” | Not applicable on Linux | Android architecture supported |
 | Progress bar | Starts after Android phone detection | README says it appears after video producer connects and USB session begins | Exact trigger unknown |
-| Dimensions | Not specified | V1 `VERSION`; V2 `CAR_INFO` | Protocol supports discovery |
-| Video | Screen capture/mirroring | Annex-B H.264 over USB | Consistent at product level; exact official transport not proven |
-| Reverse control | AccessibilityService declared | V1/V2 touch returned to source | Complementary paths |
-| Orientation | Manual describes rotation | Fixed fields/land-mode handling | Dynamic semantics incomplete |
-| Audio | Bluetooth auto-connect option | No QDLink audio, Bluetooth instructions | Consistent |
-| Reconnect | Manual says unplug/replug | Watchdog resets full session | Basic behavior consistent |
+| Dimensions | APK consumes V2 `CAR_INFO`/`VIDEO_ARGS` and reports phone/mirror sizes | V1 `VERSION`; V2 `CAR_INFO` | Dynamic negotiation independently confirmed |
+| Video | APK sends MediaCodec AVC over AOA in USB mode; Wi-Fi alternative exists | Annex-B H.264 over USB | Direct USB video independently confirmed |
+| Reverse control | APK decodes touch and calls `dispatchGesture()` | V1/V2 touch returned to source | Wire and Android ends independently confirmed |
+| Orientation | Landscape activities, land-mode messages, sensor/angle video fields | Fixed fields/land-mode handling | Official behavior is more dynamic than QDPlay |
+| Audio | APK handles HU BT address/auto-connect and A2DP; no media payload path found | No QDLink audio, Bluetooth instructions | Bluetooth-first assumption strengthened |
+| Reconnect | APK closes PFD/streams and uses 3 s heartbeat/5 s watchdog | Watchdog resets full session | Timings independently confirmed |
 | Official app required | Manual says install it | QDPlay replaces it | Replacement proven only on QDPlay-supported receivers |
 
-## APK static-analysis gap
+## Phase-0.25 official APK evidence
 
-Without a legally obtained installed APK, the following remain `UNKNOWN`:
+The static-analysis gap was closed for official Google Play version 1.9.7 (107). `VERIFIED_FROM_OFFICIAL_APK_STATIC` findings include:
 
-- Actual accessory filter strings and whether they vary by release.
-- Manifest auto-launch components and priorities.
-- Whether USB video is direct or bootstraps another transport on GE13.
-- Native libraries/JNI and exact protocol constants.
-- MediaCodec settings, SPS/PPS strategy, orientation, reconnect, and Bluetooth internals.
+- Active accessory filter `Neusoft / QDriveLink / 1.0` and attachment-driven `ConnectActivity`.
+- Public `UsbAccessory` transport with both V1 and V2 protocol detection.
+- AVC Baseline/level-3.1 Surface encoding with HU-supplied V2 width, height, fps, bitrate, and frame interval.
+- Separate SPS/PPS configuration packets and raw encoder access-unit forwarding.
+- Binary V2 multi-pointer records using big-endian floats; Accessibility gesture synthesis for external apps.
+- Alternative Wi-Fi Direct transport and active Bluetooth/A2DP management.
+- `GE13-J2` model routing, but no literal FES5PL/HU716P/Geometry C match.
 
-This gap does not prevent the first safe protocol proof because QDPlay provides an independent wire implementation, but it increases the risk of unimplemented target-specific branches.
+The full artifact provenance, limitations, and dynamic no-car analysis are in `15_OFFICIAL_APK_ANALYSIS.md`; the implementation comparison is in `16_OFFICIAL_VS_QDPLAY.md`. Exact target mode selection and on-wire values remain `UNKNOWN`.

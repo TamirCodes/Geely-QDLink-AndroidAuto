@@ -12,9 +12,9 @@ Priority definitions:
 | Question | Current status | Decisive evidence/test |
 |---|---|---|
 | Does `HU716P.00-BEH` cause stock Android to expose a `UsbAccessory`? | `UNKNOWN`; official GE13-family manual strongly suggests yes | Test 2: public API enumeration and attach intent |
-| What exact AOA manufacturer/model/version strings does the HU send? | `UNKNOWN`; QDPlay never reads them | Tests 2-3: log all `UsbAccessory` fields |
+| What exact AOA manufacturer/model/version strings does the HU send? | Official APK matches `Neusoft / QDriveLink / 1.0`; actual target values remain `UNKNOWN` | Tests 2-3: log all `UsbAccessory` fields |
 | Does GE13 require a specific initial phone VID/PID? | `UNKNOWN`; QDPlay chooses Samsung-like `04e8:6860`, but this may only emulate a generic phone | Compare multiple stock phones plus official QDLink baseline; observe whether public AOA is reached |
-| Is any mandatory handshake performed before Android exposes the accessory? | `UNKNOWN` | Test 5: public PFD first-byte exchange; compare official flow |
+| Is any mandatory app-visible handshake performed before Android exposes the accessory? | Official app contains none and begins at public PFD; exact target still unobserved | Test 5: public PFD first-byte exchange |
 | Can `openAccessory()` streams satisfy transfer boundaries and throughput? | `UNKNOWN` on target | Exact-length probe and sustained generated-video tests |
 | Does the target require a private USB function, descriptor, or endpoint? | No evidence, but not disproved | Reproducible failure of public PFD with official app success and controlled diagnostics |
 
@@ -30,9 +30,9 @@ Resolution rule: any proven requirement for APK-controlled gadget VID/PID/config
 | Which event completes the HU progress bar? | `UNKNOWN` | Timestamp UI progress against handshake and first video |
 | Projection viewport width/height? | `UNKNOWN` | `VERSION`/`CAR_INFO` plus displayed test grid |
 | Are physical panel, viewport, encoder, and touch spaces identical? | `UNKNOWN`; should not be assumed | Dimension record and edge calibration |
-| H.264 profile/level? | Not constrained by QDPlay | Encoder compatibility matrix |
+| H.264 profile/level? | Official app requests Baseline/3.1; exact target requirement unknown | Encoder compatibility matrix |
 | Annex-B requirement? | Verified for QDPlay producer contract | Confirm target using first accepted frames |
-| SPS/PPS separately or inline, and how often? | `UNKNOWN` | Vary initial/IDR codec configuration cadence |
+| SPS/PPS separately or inline, and how often? | Official app sends `csd-0 + csd-1` separately and resends on key-frame request; target acceptance unknown | Start with official behavior, then vary only if needed |
 | Required FPS/bitrate/GOP/max access unit? | `UNKNOWN` | Controlled matrix after first frame |
 | Does padding need to be exactly 512-byte aligned? | QDPlay does it | Compare only after known-good baseline |
 | How quickly must first IDR follow play request? | `UNKNOWN` | Timestamp request-to-first-frame and failure threshold |

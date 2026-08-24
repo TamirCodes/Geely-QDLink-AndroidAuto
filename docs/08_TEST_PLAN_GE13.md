@@ -47,7 +47,7 @@ Do not log contacts, messages, destinations, navigation history, screen images, 
 ## Test 2 — Mandatory stock-Android AOA gate
 
 - **Connect:** Stock non-root phone with the diagnostic APK registered for accessory attachment; driver-side port.
-- **Observe:** Whether Android creates a `UsbAccessory`, routes an attach intent, and reports `FEATURE_USB_ACCESSORY`.
+- **Observe:** Whether Android creates a `UsbAccessory`, routes an attach intent, and reports `FEATURE_USB_ACCESSORY`; compare against the official APK's `Neusoft / QDriveLink / 1.0` filter.
 - **Logs:** All six accessory fields; presence of attach intent; `accessoryList`; `hasPermission`; time from physical attach.
 - **Pass / `CONDITIONAL GO` → gate step passed:** A non-null accessory appears through public APIs.
 - **Fail / potential `NO-GO`:** No accessory appears while official QDLink succeeds on the same phone/cable, across three clean retries.
@@ -58,7 +58,7 @@ Do not log contacts, messages, destinations, navigation history, screen images, 
 - **Connect:** Disconnect/reconnect three times, then repeat after HU reboot and phone reboot.
 - **Observe:** Manufacturer, model, version, description, URI, and serial.
 - **Logs:** Exact strings with null/empty distinctions and run conditions.
-- **Pass:** Manufacturer/model are stable enough for an exact filter; optional fields' variability is understood.
+- **Pass:** Target values match or explain divergence from `Neusoft / QDriveLink / 1.0`; manufacturer/model are stable enough for an exact filter and optional-field variability is understood.
 - **Fail:** Identity changes unpredictably or is absent in a way that prevents reliable matching.
 - **Next diagnostic:** Match only stable manufacturer/model, omitting version; test collision with other accessories. If no precise safe filter is possible, keep manual enumeration fallback and mark zero-tap routing at risk.
 
@@ -105,7 +105,7 @@ Do not log contacts, messages, destinations, navigation history, screen images, 
 - **Logs:** codec name/profile/level, width/height/fps/bitrate, SPS/PPS bytes and placement, first IDR time, packet sizes, HU requests.
 - **Pass:** Stable recognizable test image appears for 60 seconds.
 - **Fail:** Black screen, decode error, stretched image, or session disconnect.
-- **Next diagnostic:** Request/send a fresh IDR; resend SPS/PPS; test Annex-B conversion; reduce bitrate/frame rate; validate frame and 512-byte lengths. Change one variable per run.
+- **Next diagnostic:** Send a distinct cached SPS/PPS packet, request an actual encoder IDR, test Annex-B conversion, honor captured `VIDEO_ARGS`, and validate frame/header/512-byte lengths. Change one variable per run.
 
 ## Test 9 — H.264 compatibility matrix
 

@@ -69,7 +69,17 @@ Findings (`VERIFIED_FROM_OFFICIAL_DOC`): the listing says QDLink connects to the
 
 ### APK analysis status
 
-`UNKNOWN`: no Android test device containing the official app was connected and no APK was obtained from an official/test-device source. Random APK mirrors were deliberately not used. Therefore this phase makes no claims about the official manifest, accessory filter, native libraries, JNI, or private constants beyond public documentation. A future authorized test-device pull should record APK version/hash before analysis.
+Phase 0.25 obtained the installed official package from a connected stock phone through ADB. The installer is `com.android.vending`, version is 1.9.7 (107), target SDK is 35, and the base APK SHA-256 is `C6F9D75FFB49E95D2B909A828EA475E915C56DCD91C7412ACDE2FF451A200B86`. All installed base/configuration splits were recorded in `15_OFFICIAL_APK_ANALYSIS.md`. Random APK mirrors were deliberately not used, and no proprietary artifact or decompiled source was added to this repository.
+
+Key `VERIFIED_FROM_OFFICIAL_APK_STATIC` findings:
+
+- Exact active accessory filter: `Neusoft / QDriveLink / 1.0`.
+- Public `UsbAccessory` enumeration, permission check, and `openAccessory()` PFD streams; no application gadget/configfs handling.
+- Both V1 `!BIN` and V2 `5A5A`, plus independent confirmation of the major QDPlay constants.
+- Direct H.264-to-AOA in USB mode, dynamic V2 encoder arguments, separate SPS/PPS packets, V2 float touch, Accessibility gestures, Bluetooth A2DP management, and an alternative Wi-Fi Direct transport.
+- A `GE13-J2` routing literal, but no exact FES5PL/HU716P/Geometry C identifier.
+
+JADX completed with 88 decompilation errors among 3,829 classes and apktool reported split-resource warnings, so ambiguous decompiled control flow is not elevated to fact. Full methodology, hashes, native-library scope, and non-invasive runtime observations are in `15_OFFICIAL_APK_ANALYSIS.md`.
 
 ## Official Geely documentation
 
@@ -182,4 +192,4 @@ Exact searches for `HU716P.00-BEH`, `SWGE13A0623H8BEH`, and related GE13 terms p
 
 ## Audit conclusion
 
-QDPlay is sufficient to map a plausible QDLink application protocol. Official Android and Geely documentation jointly support standard AOA handling by a real Android phone. They do not prove that the exact target accepts our post-AOA implementation or that it has no pre-AOA phone-identity dependency. The evidence therefore supports a `CONDITIONAL GO`, equivalent to the project-level conclusion `LIKELY — missing target validation`.
+QDPlay is sufficient to map a plausible QDLink application protocol. The official APK now independently proves that the production phone client reaches QDLink through public `UsbAccessory` streams rather than application-controlled gadget identity, and independently confirms both protocol generations and the video/touch paths. The exact target has still not been captured exposing the accessory and accepting our bytes. The result therefore remains `CONDITIONAL GO`, equivalent to `LIKELY — missing target validation`, but with the principal Android architectural risk substantially reduced.

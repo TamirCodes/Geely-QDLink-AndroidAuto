@@ -5,9 +5,9 @@
 **Gate result: `CONDITIONAL GO`.**  
 **Project conclusion: `LIKELY — missing target validation`.**
 
-A normal, stock, non-root Android APK can implement the **post-AOA QDLink application protocol** using public Android APIs. It cannot create QDPlay's Linux USB gadget, select VID/PID, configure configfs, or control kernel re-enumeration. Available evidence indicates that it should not need to: Android performs those functions for a real phone, and official GE13-family documentation shows Android's standard USB accessory approval dialog.
+A normal, stock, non-root Android APK can implement the **post-AOA QDLink application protocol** using public Android APIs. It cannot create QDPlay's Linux USB gadget, select VID/PID, configure configfs, or control kernel re-enumeration. Official QDLink 1.9.7 now independently proves that its production Android client uses `UsbManager.getAccessoryList()`, `hasPermission()`, `openAccessory()`, and PFD file streams, with no application gadget/configfs layer.
 
-The result is conditional rather than final because the exact `HU716P.00-BEH` has not been observed exposing a `UsbAccessory`, and its pre-AOA matching behavior is unknown. If the target accepts only QDPlay's emulated Samsung identity or another nonstandard gadget behavior, a normal APK cannot solve that limitation. JNI does not change that conclusion.
+The result is conditional rather than final because the exact `HU716P.00-BEH` has not been captured exposing a `UsbAccessory` and accepting clean-room QDLink bytes. The installed official app's architecture makes a mandatory application-controlled Samsung identity very unlikely, but only the target attach test closes that condition. JNI does not change the USB security boundary.
 
 ## The decisive distinction
 
@@ -73,7 +73,7 @@ QDLink VERSION or CAR_INFO               ---->
 
 The external host sends the strings. They identify the **accessory/HU application**, not the phone's post-AOA USB manufacturer descriptor. Android matches application filters on `manufacturer`, `model`, and optionally `version`. Description, URI, and serial are exposed for diagnostics but are not filter attributes.
 
-The exact GE13 strings are `UNKNOWN`: QDPlay includes `ACCESSORY_GET_STRING_*` definitions but never invokes them, and no official document prints the values. The gate test must log `UsbAccessory.getManufacturer()`, `getModel()`, `getVersion()`, `getDescription()`, `getUri()`, and `getSerial()`.
+The official APK's active filter is exactly `Neusoft / QDriveLink / 1.0` (`VERIFIED_FROM_OFFICIAL_APK_STATIC`). Those are the expected matching values, not yet an `OBSERVED_ON_TARGET` record. The gate test must still log `UsbAccessory.getManufacturer()`, `getModel()`, `getVersion()`, `getDescription()`, `getUri()`, and `getSerial()` to capture all six actual target values and null/empty behavior.
 
 ## Capability comparison
 
@@ -129,7 +129,7 @@ The application can declare:
 
 The system may start the matching activity when GE13 attaches. Because attachment begins in a system-routed activity, the application can immediately establish UI-visible state and start its connected-device foreground service without a daily Connect button.
 
-Do not publish a wildcard or guessed filter. Capture the strings first. Prefer manufacturer+model and omit version unless tests show a collision; Android documentation warns about absent version strings on older releases.
+Use the official `Neusoft / QDriveLink / 1.0` filter for the first diagnostic build, then compare it with captured target values. Do not broaden it to a wildcard. A later product filter may omit version only if target captures show instability or absence and collision testing is safe.
 
 ### Permission persistence
 
@@ -195,10 +195,10 @@ The custom UI should function even if Accessibility or Bluetooth permissions are
 
 MediaCodec can create an AVC encoder configured with `COLOR_FormatSurface`; `createInputSurface()` supplies a Surface for the test pattern or custom driving renderer. Encoder output is available as byte buffers. The packetizer must:
 
-- Convert to Annex-B if the codec emits length-prefixed access units.
-- retain and resend SPS/PPS according to target tests.
+- Normalize to Annex-B/start-code form if the codec emits length-prefixed access units; the official app forwards MediaCodec buffers without a visible AVCC conversion.
+- cache `csd-0`/`csd-1`, send them as a separate configuration packet before frames, and resend on HU request.
 - honor codec-config buffers and output-format changes.
-- request an IDR on HU demand using the sync-frame parameter.
+- request an IDR on HU demand using the sync-frame parameter **and** resend SPS/PPS; the official app visibly does the latter but no immediate sync-frame call was found.
 - preserve one QDLink frame/access-unit boundary.
 - implement complete 512-padded writes without blocking the control reader.
 
@@ -229,10 +229,10 @@ Initial milestones should use existing Bluetooth profiles rather than invent QDL
 
 ### Recommendation: **A. Kotlin/Java only for the Phase-1 protocol proof**, with module boundaries that permit a later native implementation.
 
-Reasoning:
+Reasoning, now also supported by the official APK:
 
-- The mandatory USB entry point is Android framework AOA; native code cannot provide the forbidden gadget functions.
-- QDPlay's protocol consists of byte-order conversion, bounded framing, JSON, CRC16, and state transitions—well within Kotlin performance for control traffic.
+- The mandatory USB entry point is Android framework AOA; the official client uses it directly, and native code cannot provide forbidden gadget functions.
+- QDPlay's protocol consists of byte-order conversion, bounded framing, JSON, CRC16, typed SSP values, and state transitions—well within Kotlin performance for control traffic. The official app's only native library is a narrow proprietary SSP typed-value helper, not USB/video code.
 - H.264 encoding and Surface flow are already Android APIs.
 - Keeping USB ownership, lifecycle, permissions, and services in Kotlin minimizes cross-language teardown bugs.
 - Clean-room implementation avoids importing QDPlay GPL code into a differently licensed product.
@@ -251,5 +251,6 @@ This recommendation does not claim Kotlin can emulate USB gadget identities. If 
 4. The official GE13-family manual shows Android's standard USB accessory/default dialog.
 5. Android provides hardware AVC encoding and Accessibility gesture dispatch.
 6. A custom-rendered UI avoids recurring MediaProjection consent.
+7. Official QDLink 1.9.7 independently demonstrates public AOA, direct AVC-over-AOA, touch decode, and Android Accessibility integration.
 
 The biggest blocker risk is a target-specific pre-AOA identity requirement or protocol variation. The first in-car USB gate test must resolve it before substantial Phase-1 investment.

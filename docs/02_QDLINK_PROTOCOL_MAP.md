@@ -1,4 +1,4 @@
-# QDLink protocol map from QDPlay
+# QDLink protocol map from QDPlay and official-app confirmation
 
 This document describes QDPlay commit `b6464e9c05fe690a83b1d6c1d66227059da30ee1`. Unless marked otherwise, every wire claim is `VERIFIED_FROM_SOURCE` for QDPlay and **not** an observation from `HU716P.00-BEH`.
 
@@ -52,7 +52,9 @@ APK receives V1 VERSION or V2 CAR_INFO      <----
 QDLink application state machine continues
 ```
 
-The exact HU-supplied manufacturer/model/version/description/URI/serial are `UNKNOWN`.
+The official QDLink 1.9.7 manifest matches `Neusoft / QDriveLink / 1.0` (`VERIFIED_FROM_OFFICIAL_APK_STATIC`). The exact six values actually emitted by `HU716P.00-BEH`, including description/URI/serial and null/empty behavior, remain `UNKNOWN` until target capture.
+
+The official transport enumerates `UsbAccessory`, checks framework permission, calls `openAccessory()`, and constructs file streams from the returned PFD. No application-level VID/PID, configfs, FunctionFS, or raw endpoint code was found. This independently verifies the proposed real-phone boundary.
 
 ## Transport after AOA
 
@@ -257,10 +259,10 @@ QDPlay's README explicitly requires every submitted frame to begin with `00 00 0
 |---|---|
 | Codec | H.264/AVC, encoding ID 3 (`VERIFIED_FROM_SOURCE`) |
 | Annex-B or AVCC | Annex-B producer contract (`VERIFIED_FROM_SOURCE`) |
-| SPS/PPS | `UNKNOWN`; QDPlay forwards producer bytes unchanged. Safe MVP assumption is SPS/PPS before/with each initial IDR until captured behavior says otherwise. |
-| Profile/level | `UNKNOWN` |
-| Frame rate | Producer-supplied; README images use 24 in comments but no protocol-wide required value is proven |
-| Bitrate | V1/V2 headers send 0; actual accepted range `UNKNOWN` |
+| SPS/PPS | Official app reads MediaCodec `csd-0`/`csd-1`, concatenates them, sends a distinct configuration packet before frames, and resends it on `KEY_FRAME_REQ` (`VERIFIED_FROM_OFFICIAL_APK_STATIC`) |
+| Profile/level | Official live encoder requests AVC Baseline / level 3.1; exact GE13 acceptance remains unobserved |
+| Frame rate | Official V2 uses HU-supplied `VIDEO_ARGS` and falls back to 24 fps; QDPlay uses producer values |
+| Bitrate | Official V2 uses HU-supplied bitrate and has a 2,764,800 bit/s fallback object value; accepted target range remains `UNKNOWN` |
 | IDR request | V1 command 17 and V2 JSON `KEY_FRAME_REQ`; V1 `PLAY_STATUS` also causes a local IDR request |
 | Frame boundaries | One producer call is treated as one H.264 frame/access unit |
 
@@ -328,10 +330,10 @@ The official GE13-family manual says the HU can automatically connect its Blueto
 | 10 | Projection request | V1 play/mirror commands or V2 video-support/video-control commands |
 | 11 | Video initialization | Dimension exchange, video-support/control, then H.264 after active state |
 | 12 | Width/height | HU reports them in V1 `VERSION` or V2 `CAR_INFO`; repeated per frame |
-| 13 | H.264 profile/level | Unknown |
+| 13 | H.264 profile/level | Official app requests Baseline/3.1; target requirement still unknown |
 | 14 | Annex-B/AVCC | Annex-B |
-| 15 | SPS/PPS | Unknown; forwarded inline if producer includes them |
-| 16 | FPS | Carried per frame; required target value unknown |
+| 15 | SPS/PPS | Official app sends `csd-0 + csd-1` as a separate video packet and resends on key-frame request |
+| 16 | FPS | Carried per frame; official V2 consumes HU `VIDEO_ARGS`, with 24 fps fallback |
 | 17 | Key frames | V1 command 17 / V2 `KEY_FRAME_REQ`; play start also requests one locally |
 | 18 | Touch encoding | V1 signed 16-bit structure; V2 action/count/finger plus float coordinates |
 | 19 | DOWN/MOVE/UP | Yes in both implementations |
@@ -347,4 +349,4 @@ The official GE13-family manual says the HU can automatically connect its Blueto
 
 ## Target status
 
-No packet capture exists from `SWGE13A0623H8BEH.00019` / `HU716P.00-BEH`. Every protocol detail above remains a candidate for the target until the safe in-car gate test identifies AOA strings, protocol version, command order, dimensions, and first accepted frame.
+No packet capture exists from `SWGE13A0623H8BEH.00019` / `HU716P.00-BEH`. The official APK independently confirms the protocol families and implementation paths, but the target must still identify its AOA strings, protocol version, command order, dimensions, and first accepted frame.

@@ -55,7 +55,7 @@ Use Kotlin/Java only for the first proof, with interfaces that allow a later nat
 
 ### `UsbAttachActivity`
 
-- Declares the exact captured accessory filter.
+- Initially declares the official-app filter `Neusoft / QDriveLink / 1.0`; confirms it against target-captured strings before release.
 - Is the system entry point for attachment/default routing.
 - Records all non-sensitive `UsbAccessory` fields.
 - If permission is already present, transfers the request immediately to the service.
@@ -162,13 +162,14 @@ Configure width/height from the negotiated target profile. If the protocol value
 Initial conservative encoder policy, subject to gate capture:
 
 - hardware AVC encoder with Surface input.
-- 30 fps candidate, with 24 fps fallback.
-- baseline or main profile selected only after target compatibility test.
+- AVC Baseline/level 3.1, matching the official app's first known configuration.
+- honor HU `VIDEO_ARGS`; use 24 fps only as a fallback.
 - short GOP/regular IDRs.
-- resend cached codec configuration before the first and requested IDRs.
-- CBR-like moderate bitrate chosen after dimension discovery.
+- send cached `csd-0 + csd-1` as a distinct initial/configuration packet and on HU key-frame request.
+- on key-frame request, also issue MediaCodec's explicit sync-frame request.
+- use negotiated bitrate; the official fallback value is diagnostic evidence, not a GE13 requirement.
 
-No profile/bitrate value is locked in Phase 0 because QDPlay does not establish the requirement.
+No profile/bitrate value is locked as an exact GE13 requirement because the official configuration has not been observed with `HU716P.00-BEH`.
 
 ### `VehicleInputReceiver`
 
